@@ -1,6 +1,7 @@
 use std::env::var;
 use std::process::Command;
 use std::str;
+use std::env;
 
 fn main() {
     let verbose = Command::new(var("RUSTC").unwrap_or("rustc".into()))
@@ -20,7 +21,7 @@ fn main() {
             _ => {}
         }
     }
-    let version = release.unwrap().split('-').next().unwrap();;
+    let version = release.unwrap().split('-').next().unwrap();
     let mut version_components = version.split('.').map(|s| s.parse::<u32>().unwrap());
     let version = (
         version_components.next().unwrap(),
@@ -34,4 +35,13 @@ fn main() {
     if version < (1, 8, 0, "2016-02-14") {
         println!("cargo:rustc-cfg=prefixed_jemalloc");
     }
+    sgx();
+}
+
+fn sgx() {
+    let sdk_dir = env::var("SGX_SDK")
+                    .unwrap_or_else(|_| "/opt/intel/sgxsdk".to_string());
+
+    println!("cargo:rustc-link-search=native={}/lib64", sdk_dir);
+    println!("cargo:rustc-link-lib=static=sgx_tstdc");
 }
